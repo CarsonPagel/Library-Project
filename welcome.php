@@ -1,57 +1,47 @@
 <?php
-// welcome.php - process login POST, start session, and show welcome page
+// Simple welcome/login handler modeled after the Classwork Example welcome.php
 include 'database.php';
+// Show errors temporarily to diagnose blank page issues (remove in production)
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 session_start();
 
-$error = '';
+// Read posted credentials
+$userid = isset($_POST['username']) ? $_POST['username'] : '';
+$password = isset($_POST['password']) ? $_POST['password'] : '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Get and sanitize input
-    $username = isset($_POST['username']) ? trim($_POST['username']) : '';
-    $password = isset($_POST['password']) ? $_POST['password'] : '';
+$fullname = '';
 
-    if ($username === '' || $password === '') {
-        $error = 'Username and password are required.';
-    } else {
-        // Use prepared statement to avoid SQL injection
-        $stmt = mysqli_prepare($conn, "SELECT id, username, password FROM users WHERE username = ? LIMIT 1");
-        if ($stmt) {
-            mysqli_stmt_bind_param($stmt, 's', $username);
-            mysqli_stmt_execute($stmt);
-            mysqli_stmt_bind_result($stmt, $id, $db_username, $db_password_hash);
-            if (mysqli_stmt_fetch($stmt)) {
-                // If your DB stores hashed passwords (recommended), use password_verify
-                $passwordOk = false;
-                if (password_verify($password, $db_password_hash)) {
-                    $passwordOk = true;
-                } else {
-                    // Fallback: if passwords were stored unhashed (not recommended)
-                    if ($password === $db_password_hash) {
-                        $passwordOk = true;
-                    }
-                }
-
-                if ($passwordOk) {
-                    // Successful login: set session and redirect (POST->GET)
-                    session_regenerate_id(true);
-                    $_SESSION['user_id'] = (int) $id; // integer user id
-                    $_SESSION['username'] = $db_username;
-                    header('Location: welcome.php');
-                    exit;
-                } else {
-                    $error = 'Invalid username or password.';
-                }
-            } else {
-                $error = 'Invalid username or password.';
-            }
-            mysqli_stmt_close($stmt);
-        } else {
-            $error = 'Database error.';
-        }
-    }
+if (!$conn) {
+    die("Database connection error.");
 }
 
-// If user already authenticated via session, show welcome; otherwise show login error and link back.
+if ($userid !== '' && $password !== '') {
+    // NOTE: This is intentionally simple (no prepared statements) to match the class example
+    $sql = "SELECT firstname, lastname, username, is_admin, id FROM users WHERE username='" . $userid . "' AND password='" . $password . "'";
+    $result = mysqli_query($conn, $sql);
+
+    if ($result && mysqli_num_rows($result) > 0) {
+        $row = mysqli_fetch_assoc($result);
+        $fullname = $row['firstname'] . ' ' . $row['lastname'];
+
+        // store session values
+        $_SESSION['userid'] = $row['id'];
+        $_SESSION['FullName'] = $fullname;
+        $_SESSION['username'] = $row['username'];
+        $_SESSION['is_admin'] = $row['is_admin'];
+    }
+
+    if (isset($result) && $result !== false) {
+        mysqli_free_result($result);
+    }
+
+    if ($conn) {
+        mysqli_close($conn);
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -59,61 +49,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome - Disruptive Library</title>
-    <style>
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            background: #f5f7fb;
-            padding: 40px;
-        }
-
-        .card {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-        }
-
-        .error {
-            color: #b00020;
-            margin-bottom: 12px;
-        }
-
-        a {
-            color: #667eea;
-        }
-    </style>
+    <title>Welcome</title>
 </head>
 
 <body>
-    <div class="card">
-        <?php if (isset($_SESSION['user_id'])): ?>
-            <h1>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</h1>
-            <p>Your user id is <?php echo (int) $_SESSION['user_id']; ?>.</p>
-            <p><a href="logout.php">Log out</a></p>
-        <?php else: ?>
-            <h1>Login Result</h1>
-            <?php if ($error !== ''): ?>
-                <p class="error"><?php echo htmlspecialchars($error); ?></p>
-            <?php endif; ?>
-            <p><a href="index.php">Back to login</a></p>
-        <?php endif; ?>
-    </div>
+    <?php
+    if (!empty($_SESSION['username'])) {
+        echo "<h1>Welcome to the Main Menu " . htmlspecialchars($_SESSION['FullName']) . "</h1>";
+
+        if (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1) {
+            echo "<h3>You're an admin, so you'll see the special menu.</h3>";
+            echo "<br><a href=\"seeSalesFigures.php\">See Sales Numbers</a>";
+        } else {
+            echo "<h3>You're not an admin, so you'll see regular menu.</h3>";
+        }
+
+        echo "<br><a href=\"searchArtist.php\">Search for an artist</a>";
+        echo "<br><a href=\"searchWork.php\">Search for a work of art</a>";
+        echo "<br><a href=\"searchCustomer.php\">Search for a customer</a>";
+    } else {
+        echo "<h3>Sorry! Login failed!</h3>";
+        echo "Go back to the <a href=\"index.php\">login page</a> and try again.";
+    }
+
+    echo "<br><br><a href=\"logout.php\">Log out</a>";
+    ?>
 </body>
-
-</html>
-<?php include 'database.php'; ?>
-
-<!DOCTYPE html>
-<html lang="en">
-<?php
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-} else {
-    echo "Hello Loser";
-}
-?>
 
 </html>
