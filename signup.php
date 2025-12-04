@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Disruptive Library</title>
+    <title>Sign Up - Disruptive Library</title>
     <style>
         * {
             margin: 0;
@@ -48,7 +48,7 @@
             font-weight: 700;
         }
 
-        .login-section {
+        .signup-section {
             padding: 40px;
             display: flex;
             flex-direction: column;
@@ -102,20 +102,20 @@
             transform: translateY(-2px);
         }
 
-        .signup-link {
+        .login-link {
             margin-top: 20px;
             text-align: center;
             color: #666;
         }
 
-        .signup-link a {
+        .login-link a {
             color: #667eea;
             text-decoration: none;
             font-weight: 600;
             transition: color 0.2s ease;
         }
 
-        .signup-link a:hover {
+        .login-link a:hover {
             color: #764ba2;
         }
     </style>
@@ -124,12 +124,12 @@
 <body>
     <div class="container">
         <div class="welcome-section">
-            <h1>Disruptive Library</h1>
+            <h1>Create Account</h1>
         </div>
 
-        <div class="login-section">
+        <div class="signup-section">
             <div class="form-container">
-                <form id="loginForm" onsubmit="handleSubmit(event)">
+                <form id="signupForm" onsubmit="handleSubmit(event)">
                     <div class="form-group">
                         <label for="username">Username *</label>
                         <input type="text" id="username" name="username" required>
@@ -140,11 +140,26 @@
                         <input type="password" id="password" name="password" required>
                     </div>
 
-                    <button type="submit">Log In</button>
+                    <div class="form-group">
+                        <label for="email">Email Address *</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address">Address *</label>
+                        <input type="text" id="address" name="address" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Phone Number *</label>
+                        <input type="tel" id="phone" name="phone" required>
+                    </div>
+
+                    <button type="submit">Create Account</button>
                 </form>
 
-                <div class="signup-link">
-                    Don't have an account? <a href="signup.php">Sign up here</a>
+                <div class="login-link">
+                    Already have an account? <a href="index.php">Log in here</a>
                 </div>
             </div>
         </div>
@@ -156,12 +171,15 @@
 
             const formData = {
                 username: document.getElementById('username').value,
-                password: document.getElementById('password').value
+                password: document.getElementById('password').value,
+                email: document.getElementById('email').value,
+                address: document.getElementById('address').value,
+                phone: document.getElementById('phone').value
             };
 
-            console.log('Login attempt with data:', formData);
-            // TODO: Add actual login validation via PHP
-            document.getElementById('loginForm').reset();
+            console.log('Signup attempt with data:', formData);
+            // TODO: Add actual signup validation and database insert via PHP
+            document.getElementById('signupForm').reset();
         }
     </script>
 </body>
