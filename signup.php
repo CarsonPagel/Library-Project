@@ -1,4 +1,73 @@
-<?php include 'database.php'; ?>
+<?php
+include 'database.php';
+
+// Clean signup.php: accepts optional numeric UserID, first/last name, address, password
+// On success redirects to index.php
+
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $firstname = isset($_POST['firstname']) ? trim($_POST['firstname']) : '';
+    $lastname = isset($_POST['lastname']) ? trim($_POST['lastname']) : '';
+    $address = isset($_POST['address']) ? trim($_POST['address']) : '';
+    $password = isset($_POST['password']) ? $_POST['password'] : '';
+    $requestedId = isset($_POST['userid']) && $_POST['userid'] !== '' ? trim($_POST['userid']) : '';
+
+    if ($firstname === '' || $lastname === '' || $address === '' || $password === '') {
+        $error = 'First name, last name, address and password are required.';
+    } else {
+        // Determine UserID: use requested if provided and available, otherwise MAX(UserID)+1
+        $newId = 0;
+
+        if ($requestedId !== '') {
+            if (!ctype_digit($requestedId)) {
+                $error = 'Requested User ID must be a positive integer.';
+            } else {
+                $candidate = (int) $requestedId;
+                $checkRes = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM `User` WHERE UserID = $candidate");
+                $checkRow = $checkRes ? mysqli_fetch_assoc($checkRes) : null;
+                $exists = $checkRow && isset($checkRow['cnt']) && $checkRow['cnt'] > 0;
+                if ($exists) {
+                    $error = 'Requested User ID is already taken. Please choose a different ID or leave blank.';
+                } else {
+                    $newId = $candidate;
+                }
+                if ($checkRes)
+                    mysqli_free_result($checkRes);
+            }
+        }
+
+        if ($error === '') {
+            if ($newId === 0) {
+                $res = mysqli_query($conn, "SELECT MAX(UserID) AS maxid FROM `User`");
+                $row = $res ? mysqli_fetch_assoc($res) : null;
+                $maxid = $row && isset($row['maxid']) ? (int) $row['maxid'] : 0;
+                $newId = $maxid + 1;
+                if ($res)
+                    mysqli_free_result($res);
+            }
+
+            // Escape inputs
+            $firstEsc = mysqli_real_escape_string($conn, $firstname);
+            $lastEsc = mysqli_real_escape_string($conn, $lastname);
+            $addrEsc = mysqli_real_escape_string($conn, $address);
+            $passEsc = mysqli_real_escape_string($conn, $password);
+
+            // Insert into User (includes FirstName and LastName)
+            $sql = "INSERT INTO `User` (UserID, Address, Password, FirstName, LastName) VALUES ($newId, '$addrEsc', '$passEsc', '$firstEsc', '$lastEsc')";
+            if (mysqli_query($conn, $sql)) {
+                // create Member entry (ignore errors)
+                mysqli_query($conn, "INSERT INTO `Member` (UserID) VALUES ($newId)");
+                mysqli_close($conn);
+                header('Location: index.php');
+                exit;
+            } else {
+                $error = 'Could not create account: ' . mysqli_error($conn);
+            }
+        }
+    }
+}
+?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -118,6 +187,11 @@
         .login-link a:hover {
             color: #764ba2;
         }
+
+        .error {
+            color: #b00020;
+            margin-bottom: 12px;
+        }
     </style>
 </head>
 
@@ -126,23 +200,27 @@
         <div class="welcome-section">
             <h1>Create Account</h1>
         </div>
-
         <div class="signup-section">
             <div class="form-container">
-                <form id="signupForm" onsubmit="handleSubmit(event)">
+                <?php if ($error !== ''): ?>
+                    <p class="error"><?php echo htmlspecialchars($error); ?></p>
+                <?php endif; ?>
+
+                <form id="signupForm" method="post" action="signup.php">
                     <div class="form-group">
-                        <label for="username">Username *</label>
-                        <input type="text" id="username" name="username" required>
+                        <label for="userid">User ID (optional)</label>
+                        <input type="number" id="userid" name="userid" min="1"
+                            placeholder="Leave blank to auto-generate">
                     </div>
 
                     <div class="form-group">
-                        <label for="password">Password *</label>
-                        <input type="password" id="password" name="password" required>
+                        <label for="firstname">First Name *</label>
+                        <input type="text" id="firstname" name="firstname" maxlength="30" required>
                     </div>
 
                     <div class="form-group">
-                        <label for="email">Email Address *</label>
-                        <input type="email" id="email" name="email" required>
+                        <label for="lastname">Last Name *</label>
+                        <input type="text" id="lastname" name="lastname" maxlength="30" required>
                     </div>
 
                     <div class="form-group">
@@ -151,37 +229,17 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="phone">Phone Number *</label>
-                        <input type="tel" id="phone" name="phone" required>
+                        <label for="password">Password *</label>
+                        <input type="password" id="password" name="password" required>
                     </div>
 
                     <button type="submit">Create Account</button>
                 </form>
 
-                <div class="login-link">
-                    Already have an account? <a href="index.php">Log in here</a>
-                </div>
+                <div class="login-link">Already have an account? <a href="index.php">Log in here</a></div>
             </div>
         </div>
     </div>
-
-    <script>
-        function handleSubmit(event) {
-            event.preventDefault();
-
-            const formData = {
-                username: document.getElementById('username').value,
-                password: document.getElementById('password').value,
-                email: document.getElementById('email').value,
-                address: document.getElementById('address').value,
-                phone: document.getElementById('phone').value
-            };
-
-            console.log('Signup attempt with data:', formData);
-            // TODO: Add actual signup validation and database insert via PHP
-            document.getElementById('signupForm').reset();
-        }
-    </script>
 </body>
 
 </html>

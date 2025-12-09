@@ -131,8 +131,8 @@
             <div class="form-container">
                 <form id="loginForm" action="welcome.php" method="post">
                     <div class="form-group">
-                        <label for="username">Username *</label>
-                        <input type="text" id="username" name="username" required>
+                        <label for="userid">User ID *</label>
+                        <input type="number" id="userid" name="userid" required>
                     </div>
 
                     <div class="form-group">
