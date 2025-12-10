@@ -385,7 +385,7 @@ $am = (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1);
                                     <option value="publisher">Publisher</option>
                                     <option value="id">Document ID</option>
                                 </select>
-                                <label style="margin-top:8px">Query</label>
+                                <label style="margin-top:8px"></label>
                                 <input type="text" name="q" required>
                                 <div class="actions"><button type="submit">Search</button></div>
                             </form>
@@ -398,7 +398,7 @@ $am = (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1);
                                             <th>Title</th>
                                             <th>Publisher</th>
                                             <th>Total</th>
-                                            <th>Avail</th>
+                                            <th>Available</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -462,35 +462,6 @@ $am = (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1);
                                 <div class="actions"><button type="submit">Compute Fine</button></div>
                             </form>
                         </div>
-                    </div>
-
-                    <div style="margin-top:14px" class="card">
-                        <h3>Documents By Publisher</h3>
-                        <form method="post">
-                            <input type="hidden" name="action" value="by_publisher">
-                            <label>Publisher name (partial allowed)</label>
-                            <input type="text" name="publisher_q" required>
-                            <div class="actions"><button type="submit">Show Documents</button></div>
-                        </form>
-
-                        <?php if (!empty($by_publisher_results)): ?>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>DocID</th>
-                                        <th>Title</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($by_publisher_results as $p): ?>
-                                        <tr>
-                                            <td><?php echo h($p['DocID']); ?></td>
-                                            <td><?php echo h($p['Title']); ?></td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        <?php endif; ?>
                     </div>
 
                     <div style="margin-top:18px" class="card">
@@ -559,14 +530,18 @@ $am = (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1);
                         <?php endif; ?>
                     </div>
 
-                    <p style="margin-top:18px;">
-                        <?php if ($am): ?>
-                            <a class="button" href="admin.php">Go to Admin Dashboard</a>
-                        <?php else: ?>
-                            <a class="button" href="welcome.php">Main</a>
-                        <?php endif; ?>
-                        <a class="button secondary" href="logout.php" style="margin-left:8px">Quit (Log out)</a>
-                    </p>
+                    <div style="margin-top:18px; display:flex; align-items:center; justify-content:space-between;">
+                        <div>
+                            <?php if ($am): ?>
+                                <a class="button" href="admin.php">Go to Admin Dashboard</a>
+                            <?php else: ?>
+                                <a class="button" href="welcome.php">Main</a>
+                            <?php endif; ?>
+                        </div>
+                        <div>
+                            <a class="button secondary" href="logout.php">Quit (Log out)</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

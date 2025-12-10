@@ -752,9 +752,13 @@ $currentSubtab = isset($_GET['subtab']) ? $_GET['subtab'] : 'binfo';
         <?php endif; ?>
 
         <!-- Actions -->
-        <div class="actions">
-            <a href="member.php" class="button">Reader Functions</a>
-            <a href="logout.php" class="button secondary" style="margin-left: 8px;">Logout</a>
+        <div class="actions" style="display:flex; align-items:center; justify-content:space-between;">
+            <div>
+                <a href="member.php" class="button">Reader Functions</a>
+            </div>
+            <div>
+                <a href="logout.php" class="button secondary">Logout</a>
+            </div>
         </div>
     </div>
 </div>

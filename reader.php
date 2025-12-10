@@ -298,6 +298,20 @@ if ($stmt) {
         .actions {
             margin-top: 12px
         }
+
+        /* link button styles (match member.php) */
+        a.button {
+            display: inline-block;
+            padding: 8px 12px;
+            background: #2b6cb0;
+            color: #fff;
+            border-radius: 6px;
+            text-decoration: none;
+        }
+
+        a.button.secondary {
+            background: #e53e3e;
+        }
     </style>
 </head>
 
@@ -305,6 +319,9 @@ if ($stmt) {
     <div class="container">
         <div class="welcome-section">
             <h1>Reader Functions</h1>
+            <p style="margin-top:8px;opacity:0.95">Hello,
+                <?php echo h($_SESSION['FullName'] ?? ('User #' . (int) $userId)); ?>
+            </p>
         </div>
         <div class="content">
             <div class="messages">
@@ -498,8 +515,17 @@ if ($stmt) {
                 <?php endif; ?>
             </div>
 
-            <div style="margin-top:14px;text-align:right">
-                <a href="logout.php" style="text-decoration:none"><button>Quit (Log out)</button></a>
+            <div style="margin-top:14px; display:flex; align-items:center; justify-content:space-between;">
+                <div>
+                    <?php if (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1): ?>
+                        <a class="button" href="admin.php">Go to Admin Dashboard</a>
+                    <?php else: ?>
+                        <a class="button" href="welcome.php">Main</a>
+                    <?php endif; ?>
+                </div>
+                <div>
+                    <a class="button secondary" href="logout.php">Quit (Log out)</a>
+                </div>
             </div>
         </div>
     </div>
