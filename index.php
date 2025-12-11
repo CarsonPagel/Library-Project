@@ -1,4 +1,5 @@
-<?php include 'database.php'; ?>
+<?php session_start();
+include 'database.php'; ?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -129,6 +130,19 @@
 
         <div class="login-section">
             <div class="form-container">
+                <?php
+                $login_error = '';
+                if (!empty($_SESSION['login_error'])) {
+                    $login_error = $_SESSION['login_error'];
+                    unset($_SESSION['login_error']);
+                }
+                ?>
+                <?php if ($login_error): ?>
+                    <div
+                        style="margin-bottom:12px;padding:10px;border-radius:6px;background:#ffecec;border:1px solid #f1b2b2;color:#900">
+                        <?php echo htmlspecialchars($login_error); ?></div>
+                <?php endif; ?>
+
                 <form id="loginForm" action="welcome.php" method="post">
                     <div class="form-group">
                         <label for="userid">User ID *</label>

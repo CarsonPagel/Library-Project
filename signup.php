@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $requestedId = isset($_POST['userid']) && $_POST['userid'] !== '' ? trim($_POST['userid']) : '';
 
     if ($firstname === '' || $lastname === '' || $address === '' || $password === '') {
-        $error = 'First name, last name, address and password are required.';
+        $error = 'UserID, First name, last name, address and password are required.';
     } else {
         // Determine UserID: use requested if provided and available, otherwise MAX(UserID)+1
         $newId = 0;
@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $checkRow = $checkRes ? mysqli_fetch_assoc($checkRes) : null;
                 $exists = $checkRow && isset($checkRow['cnt']) && $checkRow['cnt'] > 0;
                 if ($exists) {
-                    $error = 'Requested User ID is already taken. Please choose a different ID or leave blank.';
+                    $error = 'Requested User ID is already taken. Please choose a different ID.';
                 } else {
                     $newId = $candidate;
                 }
@@ -208,9 +208,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <form id="signupForm" method="post" action="signup.php">
                     <div class="form-group">
-                        <label for="userid">User ID (optional)</label>
-                        <input type="number" id="userid" name="userid" min="1"
-                            placeholder="Leave blank to auto-generate">
+                        <label for="userid">User ID *</label>
+                        <input type="number" id="userid" name="userid" min="1" maxlength="11" placeholder="Numbers only"
+                            required>
                     </div>
 
                     <div class="form-group">

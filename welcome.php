@@ -35,6 +35,27 @@ if ($userid !== '' && $password !== '') {
         $_SESSION['FullName'] = $fullname;
         $_SESSION['address'] = $row['Address'];
         $_SESSION['is_admin'] = $row['is_admin'];
+        // If user is NOT an admin, redirect immediately to member.php
+        if (empty($row['is_admin']) || $row['is_admin'] != 1) {
+            if ($result)
+                mysqli_free_result($result);
+            if ($conn)
+                mysqli_close($conn);
+            header('Location: member.php');
+            exit;
+        }
+    } else {
+        // Login failed: keep user on index.php and show an error there
+        if ($result && $result !== false) {
+            mysqli_free_result($result);
+        }
+        if ($conn) {
+            mysqli_close($conn);
+        }
+        // set a session flash message and redirect back to login
+        $_SESSION['login_error'] = 'Invalid User ID or password.';
+        header('Location: index.php');
+        exit;
     }
 
     if (isset($result) && $result !== false) {
