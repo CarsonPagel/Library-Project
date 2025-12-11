@@ -420,8 +420,8 @@ CREATE TABLE `User` (
 
 INSERT INTO `User` (`UserID`, `Address`, `Password`, `is_admin`, `firstname`, `lastname`) VALUES
 (1, '517 N 94th St, Milwaukee, WI 53226', 'admin', 1, 'Carson', 'Pagel'),
-(2, '456 Elm St, Springfield, IL 62702', 'member123', 0, 'Bob', 'Reader'),
-(3, '789 Oak Ave, Springfield, IL 62703', 'member456', 0, 'Carol', 'Patron'),
+(2, '456 Elm St, Springfield, IL 62702', 'member123', 1, 'Bob', 'Reader'),
+(3, '789 Oak Ave, Springfield, IL 62703', 'member456', 1, 'Carol', 'Patron'),
 (4, '321 Pine Rd, Springfield, IL 62704', 'member789', 0, 'David', 'Borrower'),
 (5, '654 Maple Dr, Springfield, IL 62705', 'member000', 0, 'Emma', 'Scholar');
 
