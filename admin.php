@@ -92,18 +92,19 @@ if (isset($_GET['view_copies'])) {
 // Fetch documents
 $documents = [];
 if ($currentTab === 'docs' && $currentView === 'list') {
+    $sql = "SELECT d.DocID, d.Title, d.Publisher,
+        (SELECT COUNT(*) FROM Copy c 
+         WHERE c.DocID = d.DocID AND c.BranchID = '$branchID'
+         AND NOT EXISTS (SELECT 1 FROM Borrows b WHERE b.DocID = c.DocID AND b.CopyNum = c.CopyNum)
+        ) AS copies_available
+        FROM Document d";
+
     if ($docSearch !== "") {
         $filter = mysqli_real_escape_string($conn, $docSearch);
-        $sql = "SELECT d.DocID, d.Title, d.Publisher,
-                (SELECT COUNT(*) FROM Copy WHERE Copy.DocID = d.DocID AND Copy.BranchID = '$branchID') AS copies_available
-                FROM Document d
-                WHERE d.Title LIKE '%$filter%' OR d.Publisher LIKE '%$filter%' OR d.DocID LIKE '%$filter%'
-                ORDER BY d.Title LIMIT 300";
+        $sql = $sql . " WHERE d.Title LIKE '%$filter%' OR d.Publisher LIKE '%$filter%' OR d.DocID LIKE '%$filter%'";
+        $sql = $sql . " ORDER BY d.Title LIMIT 300";
     } else {
-        $sql = "SELECT d.DocID, d.Title, d.Publisher,
-                (SELECT COUNT(*) FROM Copy WHERE Copy.DocID = d.DocID AND Copy.BranchID = '$branchID') AS copies_available
-                FROM Document d
-                ORDER BY d.Title LIMIT 500";
+        $sql = $sql . " ORDER BY d.Title LIMIT 500";
     }
     $res = mysqli_query($conn, $sql);
     while ($row = mysqli_fetch_assoc($res)) { $documents[] = $row; }
@@ -143,13 +144,19 @@ if ($currentTab === 'branch' && isset($_GET['subtab']) && $_GET['subtab'] === 'b
 // Fetch users
 $users = [];
 if ($currentTab === 'branch' && isset($_GET['subtab']) && $_GET['subtab'] === 'uinfo') {
-    if ($userSearch !== "" && ctype_digit($userSearch)) {
-        $sql = "SELECT * FROM User WHERE UserID = '$userSearch' LIMIT 200";
-    } else if ($userSearch !== "") {
-        $qEsc = mysqli_real_escape_string($conn, $userSearch);
-        $sql = "SELECT * FROM User WHERE firstname LIKE '%$qEsc%' OR lastname LIKE '%$qEsc%' LIMIT 200";
+    $sql = "SELECT * FROM User";
+
+    if ($userSearch !== "") {
+        if (ctype_digit($userSearch)) {
+            $sql = $sql . " WHERE UserID = '$userSearch'";
+            $sql = $sql . " LIMIT 200";
+        } else {
+            $qEsc = mysqli_real_escape_string($conn, $userSearch);
+            $sql = $sql . " WHERE firstname LIKE '%$qEsc%' OR lastname LIKE '%$qEsc%'";
+            $sql = $sql . " LIMIT 200";
+        }
     } else {
-        $sql = "SELECT * FROM User LIMIT 500";
+        $sql = $sql . " LIMIT 500";
     }
     $r = mysqli_query($conn, $sql);
     while ($row = mysqli_fetch_assoc($r)) { $users[] = $row; }
@@ -752,13 +759,9 @@ $currentSubtab = isset($_GET['subtab']) ? $_GET['subtab'] : 'binfo';
         <?php endif; ?>
 
         <!-- Actions -->
-        <div class="actions" style="display:flex; align-items:center; justify-content:space-between;">
-            <div>
-                <a href="member.php" class="button">Reader Functions</a>
-            </div>
-            <div>
-                <a href="logout.php" class="button secondary">Logout</a>
-            </div>
+        <div class="actions">
+            <a href="member.php" class="button">Reader Functions</a>
+            <a href="logout.php" class="button secondary" style="margin-left: 8px;">Logout</a>
         </div>
     </div>
 </div>
