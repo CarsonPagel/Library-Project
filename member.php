@@ -534,8 +534,6 @@ $am = (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1);
                         <div>
                             <?php if ($am): ?>
                                 <a class="button" href="admin.php">Go to Admin Dashboard</a>
-                            <?php else: ?>
-                                <a class="button" href="welcome.php">Main</a>
                             <?php endif; ?>
                         </div>
                         <div>
