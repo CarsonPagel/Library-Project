@@ -147,7 +147,7 @@ INSERT INTO Journal (JournalID, DocID, Volume, EditorID) VALUES
 -- ============================================
 -- Insert Copies (multiple copies per document)
 -- ============================================
-IINSERT INTO Copy (DocID, BranchID, CopyNum, UserID, Date) VALUES
+INSERT INTO Copy (DocID, BranchID, CopyNum, UserID, Date) VALUES
 -- DocID 1: 3 copies
 (1, 1, 1, 2, '2025-01-15'),
 (1, 1, 2, NULL, '2025-01-15'),
@@ -227,18 +227,15 @@ INSERT INTO Borrows (DocID, CopyNum, UserID, BorrowDate, ReturnDate) VALUES
 (17, 1, 2, '2025-11-10', '2025-11-24'),   -- OVERDUE (was due Nov 24)
 
 -- Carol (UserID 3) - has overdue fines
-INSERT INTO Borrows (DocID, CopyNum, UserID, BorrowDate, ReturnDate) VALUES
 (19, 1, 3, '2025-10-15', '2025-10-29'),   -- OVERDUE (was due Oct 29)
 (5, 2, 3, '2025-11-15', '2025-11-29'),    -- OVERDUE (was due Nov 29)
 
 -- David (UserID 4) - has checked out books
-INSERT INTO Borrows (DocID, CopyNum, UserID, BorrowDate, ReturnDate) VALUES
 (2, 2, 4, '2025-11-25', '2025-12-09'),    -- Within deadline
 (6, 2, 4, '2025-11-22', '2025-12-06'),    -- Within deadline
 (13, 1, 4, '2025-11-18', '2025-12-02'),   -- Within deadline
 
 -- Emma (UserID 5) - has overdue books
-INSERT INTO Borrows (DocID, CopyNum, UserID, BorrowDate, ReturnDate) VALUES
 (3, 3, 5, '2025-09-01', '2025-09-15'),    -- OVERDUE (was due Sep 15)
 (8, 1, 5, '2025-11-01', '2025-11-15'),    -- OVERDUE (was due Nov 15)
 (13, 3, 5, '2025-11-20', '2025-12-04');   -- Within deadline
