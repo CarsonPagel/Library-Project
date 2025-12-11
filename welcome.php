@@ -35,13 +35,13 @@ if ($userid !== '' && $password !== '') {
         $_SESSION['FullName'] = $fullname;
         $_SESSION['address'] = $row['Address'];
         $_SESSION['is_admin'] = $row['is_admin'];
-        // If user is NOT an admin, redirect immediately to reader.php
+        // If user is NOT an admin, redirect immediately to member.php
         if (empty($row['is_admin']) || $row['is_admin'] != 1) {
             if ($result)
                 mysqli_free_result($result);
             if ($conn)
                 mysqli_close($conn);
-            header('Location: reader.php');
+            header('Location: member.php');
             exit;
         }
     } else {

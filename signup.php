@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $requestedId = isset($_POST['userid']) && $_POST['userid'] !== '' ? trim($_POST['userid']) : '';
 
     if ($firstname === '' || $lastname === '' || $address === '' || $password === '') {
-        $error = 'First name, last name, address and password are required.';
+        $error = 'UserID, First name, last name, address and password are required.';
     } else {
         // Determine UserID: use requested if provided and available, otherwise MAX(UserID)+1
         $newId = 0;
