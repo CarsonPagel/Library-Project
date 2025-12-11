@@ -80,6 +80,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $userSearch = trim($_POST['q'] ?? '');
         $currentTab = 'branch';
     }
+    
+    // Stats branch selection
+    if ($action === 'stats') {
+        $currentTab = 'stats';
+    }
 }
 
 // Handle view copy status (via GET)
@@ -92,19 +97,24 @@ if (isset($_GET['view_copies'])) {
 // Fetch documents
 $documents = [];
 if ($currentTab === 'docs' && $currentView === 'list') {
-    $sql = "SELECT d.DocID, d.Title, d.Publisher,
-        (SELECT COUNT(*) FROM Copy c 
-         WHERE c.DocID = d.DocID AND c.BranchID = '$branchID'
-         AND NOT EXISTS (SELECT 1 FROM Borrows b WHERE b.DocID = c.DocID AND b.CopyNum = c.CopyNum)
-        ) AS copies_available
-        FROM Document d";
-
     if ($docSearch !== "") {
         $filter = mysqli_real_escape_string($conn, $docSearch);
-        $sql = $sql . " WHERE d.Title LIKE '%$filter%' OR d.Publisher LIKE '%$filter%' OR d.DocID LIKE '%$filter%'";
-        $sql = $sql . " ORDER BY d.Title LIMIT 300";
+        $sql = "SELECT d.DocID, d.Title, d.Publisher,
+                (SELECT COUNT(*) FROM Copy c 
+                 WHERE c.DocID = d.DocID AND c.BranchID = '$branchID'
+                 AND NOT EXISTS (SELECT 1 FROM Borrows b WHERE b.DocID = c.DocID AND b.CopyNum = c.CopyNum)
+                ) AS copies_available
+                FROM Document d
+                WHERE d.Title LIKE '%$filter%' OR d.Publisher LIKE '%$filter%' OR d.DocID LIKE '%$filter%'
+                ORDER BY d.Title LIMIT 300";
     } else {
-        $sql = $sql . " ORDER BY d.Title LIMIT 500";
+        $sql = "SELECT d.DocID, d.Title, d.Publisher,
+                (SELECT COUNT(*) FROM Copy c 
+                 WHERE c.DocID = d.DocID AND c.BranchID = '$branchID'
+                 AND NOT EXISTS (SELECT 1 FROM Borrows b WHERE b.DocID = c.DocID AND b.CopyNum = c.CopyNum)
+                ) AS copies_available
+                FROM Document d
+                ORDER BY d.Title LIMIT 500";
     }
     $res = mysqli_query($conn, $sql);
     while ($row = mysqli_fetch_assoc($res)) { $documents[] = $row; }
@@ -144,19 +154,13 @@ if ($currentTab === 'branch' && isset($_GET['subtab']) && $_GET['subtab'] === 'b
 // Fetch users
 $users = [];
 if ($currentTab === 'branch' && isset($_GET['subtab']) && $_GET['subtab'] === 'uinfo') {
-    $sql = "SELECT * FROM User";
-
-    if ($userSearch !== "") {
-        if (ctype_digit($userSearch)) {
-            $sql = $sql . " WHERE UserID = '$userSearch'";
-            $sql = $sql . " LIMIT 200";
-        } else {
-            $qEsc = mysqli_real_escape_string($conn, $userSearch);
-            $sql = $sql . " WHERE firstname LIKE '%$qEsc%' OR lastname LIKE '%$qEsc%'";
-            $sql = $sql . " LIMIT 200";
-        }
+    if ($userSearch !== "" && ctype_digit($userSearch)) {
+        $sql = "SELECT * FROM User WHERE UserID = '$userSearch' LIMIT 200";
+    } else if ($userSearch !== "") {
+        $qEsc = mysqli_real_escape_string($conn, $userSearch);
+        $sql = "SELECT * FROM User WHERE firstname LIKE '%$qEsc%' OR lastname LIKE '%$qEsc%' LIMIT 200";
     } else {
-        $sql = $sql . " LIMIT 500";
+        $sql = "SELECT * FROM User LIMIT 500";
     }
     $r = mysqli_query($conn, $sql);
     while ($row = mysqli_fetch_assoc($r)) { $users[] = $row; }
@@ -164,20 +168,58 @@ if ($currentTab === 'branch' && isset($_GET['subtab']) && $_GET['subtab'] === 'u
 
 // Fetch stats
 $topBorrowers = [];
-$topBooks = [];
+$topBooksInBranch = [];
+$topBooksOfYear = [];
 $avgFine = 0;
-if ($currentTab === 'stats') {
-    // Top borrowers
-    $tbR = mysqli_query($conn, "SELECT b.UserID, u.firstname, u.lastname, COUNT(*) AS borrowed
-                                 FROM Borrows b JOIN User u ON u.UserID = b.UserID
-                                 GROUP BY b.UserID ORDER BY borrowed DESC LIMIT 10");
-    while ($row = mysqli_fetch_assoc($tbR)) { $topBorrowers[] = $row; }
+$selectedBranch = $branchID; // Default to admin's branch
+$allBranches = [];
 
-    // Top books
-    $bookR = mysqli_query($conn, "SELECT b.DocID, d.Title, d.Publisher, COUNT(*) AS times_borrowed
-                                   FROM Borrows b JOIN Document d ON d.DocID = b.DocID
-                                   GROUP BY b.DocID ORDER BY times_borrowed DESC LIMIT 10");
-    while ($row = mysqli_fetch_assoc($bookR)) { $topBooks[] = $row; }
+if ($currentTab === 'stats') {
+    // Get all branches for dropdown
+    $branchRes = mysqli_query($conn, "SELECT BranchID, Address FROM Lib_Branch ORDER BY BranchID");
+    while ($row = mysqli_fetch_assoc($branchRes)) { $allBranches[] = $row; }
+    
+    // Handle branch selection from form
+    if (isset($_POST['branch_select'])) {
+        $selectedBranch = intval($_POST['selected_branch']);
+    }
+    
+    // Top borrowers IN SELECTED BRANCH
+    if ($selectedBranch !== null) {
+        $tbR = mysqli_query($conn, "SELECT b.UserID, u.firstname, u.lastname, COUNT(*) AS borrowed
+                                     FROM Borrows b 
+                                     JOIN User u ON u.UserID = b.UserID
+                                     JOIN Copy c ON b.DocID = c.DocID AND b.CopyNum = c.CopyNum
+                                     WHERE c.BranchID = '$selectedBranch'
+                                     GROUP BY b.UserID 
+                                     ORDER BY borrowed DESC 
+                                     LIMIT 10");
+        while ($row = mysqli_fetch_assoc($tbR)) { $topBorrowers[] = $row; }
+    }
+
+    // Top books IN SELECTED BRANCH
+    if ($selectedBranch !== null) {
+        $bookR = mysqli_query($conn, "SELECT b.DocID, d.Title, d.Publisher, COUNT(*) AS times_borrowed
+                                       FROM Borrows b 
+                                       JOIN Document d ON d.DocID = b.DocID
+                                       JOIN Copy c ON b.DocID = c.DocID AND b.CopyNum = c.CopyNum
+                                       WHERE c.BranchID = '$selectedBranch'
+                                       GROUP BY b.DocID 
+                                       ORDER BY times_borrowed DESC 
+                                       LIMIT 10");
+        while ($row = mysqli_fetch_assoc($bookR)) { $topBooksInBranch[] = $row; }
+    }
+    
+    // Top 10 most popular books OF THE YEAR (global, not branch-specific)
+    $currentYear = date('Y');
+    $bookYearR = mysqli_query($conn, "SELECT b.DocID, d.Title, d.Publisher, COUNT(*) AS times_borrowed
+                                       FROM Borrows b 
+                                       JOIN Document d ON d.DocID = b.DocID
+                                       WHERE YEAR(b.BorrowDate) = '$currentYear'
+                                       GROUP BY b.DocID 
+                                       ORDER BY times_borrowed DESC 
+                                       LIMIT 10");
+    while ($row = mysqli_fetch_assoc($bookYearR)) { $topBooksOfYear[] = $row; }
 
     // Average fine
     $fineR = mysqli_query($conn, "SELECT AVG(Fines) AS avgFine FROM Member");
@@ -699,7 +741,23 @@ $currentSubtab = isset($_GET['subtab']) ? $_GET['subtab'] : 'binfo';
         <!-- STATISTICS -->
         <?php if ($currentTab === 'stats'): ?>
             <div class="card">
-                <h3>Top Borrowers</h3>
+                <h3>Select Branch for Statistics</h3>
+                <form method="post" class="search-bar">
+                    <input type="hidden" name="action" value="stats">
+                    <input type="hidden" name="branch_select" value="1">
+                    <select name="selected_branch" style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.95em;">
+                        <?php foreach ($allBranches as $branch): ?>
+                            <option value="<?= h($branch['BranchID']) ?>" <?= $selectedBranch == $branch['BranchID'] ? 'selected' : '' ?>>
+                                Branch <?= h($branch['BranchID']) ?> - <?= h($branch['Address']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="submit" class="small">View Stats</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3>Top 10 Borrowers in Branch <?= h($selectedBranch) ?></h3>
                 <table>
                     <thead>
                         <tr>
@@ -710,7 +768,7 @@ $currentSubtab = isset($_GET['subtab']) ? $_GET['subtab'] : 'binfo';
                     </thead>
                     <tbody>
                         <?php if (empty($topBorrowers)): ?>
-                            <tr><td colspan="3" style="text-align:center; color:#999;">No borrowing data available</td></tr>
+                            <tr><td colspan="3" style="text-align:center; color:#999;">No borrowing data available for this branch</td></tr>
                         <?php else: ?>
                             <?php foreach ($topBorrowers as $u): ?>
                                 <tr>
@@ -725,7 +783,7 @@ $currentSubtab = isset($_GET['subtab']) ? $_GET['subtab'] : 'binfo';
             </div>
 
             <div class="card">
-                <h3>Top Books</h3>
+                <h3>Top 10 Most Borrowed Books in Branch <?= h($selectedBranch) ?></h3>
                 <table>
                     <thead>
                         <tr>
@@ -736,10 +794,38 @@ $currentSubtab = isset($_GET['subtab']) ? $_GET['subtab'] : 'binfo';
                         </tr>
                     </thead>
                     <tbody>
-                        <?php if (empty($topBooks)): ?>
-                            <tr><td colspan="4" style="text-align:center; color:#999;">No borrowing data available</td></tr>
+                        <?php if (empty($topBooksInBranch)): ?>
+                            <tr><td colspan="4" style="text-align:center; color:#999;">No borrowing data available for this branch</td></tr>
                         <?php else: ?>
-                            <?php foreach ($topBooks as $b): ?>
+                            <?php foreach ($topBooksInBranch as $b): ?>
+                                <tr>
+                                    <td><?= h($b['DocID']) ?></td>
+                                    <td><?= h($b['Title']) ?></td>
+                                    <td><?= h($b['Publisher']) ?></td>
+                                    <td><?= h($b['times_borrowed']) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3>Top 10 Most Popular Books of <?= date('Y') ?> (All Branches)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Doc ID</th>
+                            <th>Title</th>
+                            <th>Publisher</th>
+                            <th>Times Borrowed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($topBooksOfYear)): ?>
+                            <tr><td colspan="4" style="text-align:center; color:#999;">No borrowing data available for this year</td></tr>
+                        <?php else: ?>
+                            <?php foreach ($topBooksOfYear as $b): ?>
                                 <tr>
                                     <td><?= h($b['DocID']) ?></td>
                                     <td><?= h($b['Title']) ?></td>
